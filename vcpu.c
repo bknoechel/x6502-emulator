@@ -39,26 +39,52 @@ vcpu* new_cpu() {
   return ptr;
 }
 
-int main(int argc, char *argv[]) {
-  char* fn = "a.o65";
+void add(vcpu* cpu, uint8_t* mem, uint8_t v) {
+  uint16_t t;
+  if (cpu->reg_st & DECIMAL_FLAG) {
 
+  } else {
+    t = v + cpu->reg_a;
+    if (t > 0xFF) {
+      cpu->reg_st |= CARRY_FLAG;
+    }
+    cpu->reg_a = (uint8_t) t;
+  }
+}
+
+void inc(uint8_t* reg) {
+  (*reg)++;
+}
+
+void dec(uint8_t* reg) {
+  (*reg)--;
+}
+
+int main(int argc, char *argv[]) {
+  char* fn = "a.o65"; // Hardcode xa output
+
+  // Memory (not part of cpu struct)
   uint8_t* mem = (uint8_t*) malloc(sizeof(uint8_t)*MEMSIZE);
 
+  // Write assembly into memory starting at 0x0000, add EXT (0xFF) opcode at end
   FILE *f = fopen(fn, "r");
   int ins;
   int c = 0;
-
   while ((ins = fgetc(f)) != EOF) {
     mem[c++] = (uint8_t) ins;
   }
   mem[c++] = EXT;
 
+  // Struct for cpu
   vcpu* cpu = new_cpu();
 
+  // Flag for while loop
   uint8_t RUN = 1;
-  uint8_t n;
+
+  // Working vars
   uint16_t t;
 
+  // If we had a memory write (0/1) and where
   uint8_t mem_write = 0;
   uint16_t mem_write_location = 0;
 
@@ -71,29 +97,55 @@ int main(int argc, char *argv[]) {
         RUN = 0;
         break;
 
+      // Add
       case ADC_IM:
-        n = mem[cpu->pc++];
-        if (cpu->reg_st & DECIMAL_FLAG) {
-
-        } else {
-          t = n + cpu->reg_a;
-          if (t > 0xFF) {
-            cpu->reg_st |= CARRY_FLAG;
-          }
-          cpu->reg_a = (uint8_t) t;
-        }
+        add(cpu, mem, mem[cpu->pc++]);
         break;
 
       case LDA_IM:
         cpu->reg_a = mem[cpu->pc++];
         break;
 
+      // Store
       case STA:
         t = mem[cpu->pc] | mem[cpu->pc+1] << 8;
         cpu->pc += 2;
         mem[t] = cpu->reg_a;
         mem_write = 1;
         mem_write_location = t;
+        break;
+
+      // Transfer, increment, decrement x/y
+      case TAX:
+        cpu->reg_x = cpu->reg_a;
+        break;
+
+      case TXA:
+        cpu->reg_a = cpu->reg_x;
+        break;
+
+      case DEX:
+        dec(&(cpu->reg_x));
+        break;
+
+      case INX:
+        inc(&(cpu->reg_x));
+        break;
+
+      case TAY:
+        cpu->reg_y = cpu->reg_a;
+        break;
+
+      case TYA:
+        cpu->reg_a = cpu->reg_y;
+        break;
+
+      case DEY:
+        dec(&(cpu->reg_y));
+        break;
+
+      case INY:
+        inc(&(cpu->reg_y));
         break;
 
       default:
