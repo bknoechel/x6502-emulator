@@ -8,6 +8,14 @@
 
 #define MEMSIZE 65536
 
+#define NEGATIVE_FLAG 0x80
+#define OVERFLOW_FLAG 0x40
+#define BREAK_FLAG 0x10
+#define DECIMAL_FLAG 0x08
+#define INTERRUPT_FLAG 0x04
+#define ZERO_FLAG 0x02
+#define CARRY_FLAG 0x01
+
 typedef struct {
 
   uint16_t pc;
@@ -48,6 +56,7 @@ int main(int argc, char *argv[]) {
   vcpu* cpu = new_cpu();
 
   uint8_t RUN = 1;
+  uint8_t n;
   uint16_t t;
 
   uint8_t mem_write = 0;
@@ -57,11 +66,25 @@ int main(int argc, char *argv[]) {
 
     uint8_t opcode = mem[cpu->pc++];
     switch (opcode) {
+
       case EXT:
         RUN = 0;
         break;
 
-      case LDA:
+      case ADC_IM:
+        n = mem[cpu->pc++];
+        if (cpu->reg_st & DECIMAL_FLAG) {
+
+        } else {
+          t = n + cpu->reg_a;
+          if (t > 0xFF) {
+            cpu->reg_st |= CARRY_FLAG;
+          }
+          cpu->reg_a = (uint8_t) t;
+        }
+        break;
+
+      case LDA_IM:
         cpu->reg_a = mem[cpu->pc++];
         break;
 
