@@ -7,6 +7,20 @@
 #define LDA_IM  0xA9
 #define STA     0x8D
 
+#define BPL     0x10
+#define BMI     0x30
+#define BVC     0x50
+#define BVS     0x70
+#define BCC     0x90
+#define BCS     0xB0
+#define BNE     0xD0
+#define BEQ     0xF0
+
+#define CMP_IM  0xC9
+#define CMP_AB  0xCD
+
+#define INC_AB  0xEE
+
 #define TAX     0xAA
 #define TXA     0x8A
 #define DEX     0xCA

@@ -60,6 +60,12 @@ void dec(uint8_t* reg) {
   (*reg)--;
 }
 
+void cmp(vcpu* cpu, uint8_t* reg, uint8_t v) {
+  if ((*reg) == v) {
+    cpu->reg_st |= ZERO_FLAG;
+  }
+}
+
 int main(int argc, char *argv[]) {
   char* fn = "a.o65"; // Hardcode xa output
 
@@ -115,6 +121,56 @@ int main(int argc, char *argv[]) {
         mem_write_location = t;
         break;
 
+      // Branch
+      case BPL:
+        break;
+
+      case BMI:
+        break;
+
+      case BVC:
+        break;
+
+      case BVS:
+        break;
+
+      case BCC:
+        break;
+
+      case BCS:
+        break;
+
+      case BNE:
+        if (!(cpu->reg_st & ZERO_FLAG)) {
+          cpu->pc += (int8_t) mem[cpu->pc];
+        }
+        cpu->pc++;
+        break;
+
+      case BEQ:
+        break;
+
+      // Compare
+      case CMP_IM:
+        cmp(cpu, &(cpu->reg_a), mem[cpu->pc++]);
+        break;
+
+      case CMP_AB:
+        t = mem[cpu->pc] | mem[cpu->pc+1] << 8;
+        cpu->pc += 2;
+        cmp(cpu, &(cpu->reg_a), mem[t]);
+        break;
+
+      // Increment memory
+      case INC_AB:
+        t = mem[cpu->pc] | mem[cpu->pc+1] << 8;
+        cpu->pc += 2;
+        mem[t]++;
+        mem_write = 1;
+        mem_write_location = t;
+        break;
+
+
       // Transfer, increment, decrement x/y
       case TAX:
         cpu->reg_x = cpu->reg_a;
@@ -149,7 +205,7 @@ int main(int argc, char *argv[]) {
         break;
 
       default:
-        printf("Error: unknown opcode, exiting\n");
+        printf("Error: unknown opcode %x, exiting\n", opcode);
         return 0;
     }
 
