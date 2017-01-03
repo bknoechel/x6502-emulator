@@ -66,6 +66,12 @@ void cmp(vcpu* cpu, uint8_t* reg, uint8_t v) {
   }
 }
 
+uint16_t abs_mem(vcpu* cpu, uint8_t* mem) {
+  uint16_t m = mem[cpu->pc] | mem[cpu->pc+1] << 8;
+  cpu->pc += 2;
+  return m;
+}
+
 int main(int argc, char *argv[]) {
   char* fn = "a.o65"; // Hardcode xa output
 
@@ -114,8 +120,7 @@ int main(int argc, char *argv[]) {
 
       // Store
       case STA:
-        t = mem[cpu->pc] | mem[cpu->pc+1] << 8;
-        cpu->pc += 2;
+        t = abs_mem(cpu, mem);
         mem[t] = cpu->reg_a;
         mem_write = 1;
         mem_write_location = t;
@@ -156,20 +161,17 @@ int main(int argc, char *argv[]) {
         break;
 
       case CMP_AB:
-        t = mem[cpu->pc] | mem[cpu->pc+1] << 8;
-        cpu->pc += 2;
+        t = abs_mem(cpu, mem);
         cmp(cpu, &(cpu->reg_a), mem[t]);
         break;
 
       // Increment memory
       case INC_AB:
-        t = mem[cpu->pc] | mem[cpu->pc+1] << 8;
-        cpu->pc += 2;
+        t = abs_mem(cpu, mem);
         mem[t]++;
         mem_write = 1;
         mem_write_location = t;
         break;
-
 
       // Transfer, increment, decrement x/y
       case TAX:
