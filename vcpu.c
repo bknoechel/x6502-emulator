@@ -34,7 +34,7 @@ vcpu* new_cpu() {
   ptr->reg_x = 0;
   ptr->reg_y = 0;
   ptr->reg_a = 0;
-  ptr->reg_sp = 0;
+  ptr->reg_sp = 0xFF;
   ptr->reg_st = 0;
   return ptr;
 }
@@ -109,6 +109,10 @@ int main(int argc, char *argv[]) {
         RUN = 0;
         break;
 
+      case NOP:
+        cpu->pc++;
+        break;
+
       // Add
       case ADC_IM:
         add(cpu, mem, mem[cpu->pc++]);
@@ -153,6 +157,11 @@ int main(int argc, char *argv[]) {
         break;
 
       case BEQ:
+        break;
+
+      case JMP_AB:
+        t = abs_mem(cpu, mem);
+        cpu->pc = t;
         break;
 
       // Compare

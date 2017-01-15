@@ -1,6 +1,8 @@
 #ifndef OPCODES
 #define OPCODES
 
+#define NOP     0xEA
+
 #define ADC_IM  0x69
 
 #define EXT     0xFF
@@ -15,6 +17,9 @@
 #define BCS     0xB0
 #define BNE     0xD0
 #define BEQ     0xF0
+
+#define JMP_AB  0x4C
+#define JSR     0x20
 
 #define CMP_IM  0xC9
 #define CMP_AB  0xCD
