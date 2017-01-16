@@ -30,7 +30,7 @@ typedef struct {
 
 vcpu* new_cpu() {
   vcpu* ptr = malloc(sizeof(vcpu));
-  ptr->pc = 0;
+  ptr->pc = 0x1000;
   ptr->reg_x = 0;
   ptr->reg_y = 0;
   ptr->reg_a = 0;
@@ -66,10 +66,27 @@ void cmp(vcpu* cpu, uint8_t* reg, uint8_t v) {
   }
 }
 
+// Return memory location by reading two consecutive bytes in memory to get
+// uint16_t address
 uint16_t abs_mem(vcpu* cpu, uint8_t* mem) {
   uint16_t m = mem[cpu->pc] | mem[cpu->pc+1] << 8;
   cpu->pc += 2;
   return m;
+}
+
+// Stack lives in memory between 0x0100 and 0x01ff, reg_sp initially at 0xff
+
+void stack_push(vcpu* cpu, uint8_t* mem, uint8_t v) {
+  cpu->reg_sp--;
+  uint16_t m = cpu->reg_sp | 0x0100;
+  mem[m] = v;
+}
+
+uint8_t stack_pull(vcpu* cpu, uint8_t* mem) {
+  uint16_t m = cpu->reg_sp | 0x0100;
+  uint8_t v = mem[m];
+  cpu->reg_sp++;
+  return v;
 }
 
 int main(int argc, char *argv[]) {
@@ -81,7 +98,7 @@ int main(int argc, char *argv[]) {
   // Write assembly into memory starting at 0x0000, add EXT (0xFF) opcode at end
   FILE *f = fopen(fn, "r");
   int ins;
-  int c = 0;
+  int c = 0x1000;
   while ((ins = fgetc(f)) != EOF) {
     mem[c++] = (uint8_t) ins;
   }
@@ -116,6 +133,11 @@ int main(int argc, char *argv[]) {
       // Add
       case ADC_IM:
         add(cpu, mem, mem[cpu->pc++]);
+        break;
+
+      case ADC_AB:
+        t = abs_mem(cpu, mem);
+        add(cpu, mem, mem[t]);
         break;
 
       case LDA_IM:
@@ -159,9 +181,37 @@ int main(int argc, char *argv[]) {
       case BEQ:
         break;
 
+      // Jump
+
       case JMP_AB:
         t = abs_mem(cpu, mem);
         cpu->pc = t;
+        break;
+
+      case JSR:
+        t = cpu->pc + 1; // Next op - 1
+        stack_push(cpu, mem, (uint8_t)((t & 0xff00) >> 8));
+        stack_push(cpu, mem, (uint8_t)(t & 0x00ff));
+        t = abs_mem(cpu, mem);
+        cpu->pc = t;
+        break;
+
+      case RTS:
+        t = (uint16_t)stack_pull(cpu, mem);
+        t = t | (uint16_t)(stack_pull(cpu, mem) << 8);
+        cpu-> pc = t + 1;
+        break;
+
+      // Stack
+      case TXS:
+        break;
+
+      case PHA:
+        stack_push(cpu, mem, cpu->reg_a);
+        break;
+
+      case PLA:
+        cpu->reg_a = stack_pull(cpu, mem);
         break;
 
       // Compare
@@ -180,6 +230,15 @@ int main(int argc, char *argv[]) {
         mem[t]++;
         mem_write = 1;
         mem_write_location = t;
+        break;
+
+      // Load x,y
+      case LDX_IM:
+        cpu->reg_x = mem[cpu->pc++];
+        break;
+
+      case LDY_IM:
+        cpu->reg_y = mem[cpu->pc++];
         break;
 
       // Transfer, increment, decrement x/y

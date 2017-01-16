@@ -4,6 +4,7 @@
 #define NOP     0xEA
 
 #define ADC_IM  0x69
+#define ADC_AB  0x6D
 
 #define EXT     0xFF
 #define LDA_IM  0xA9
@@ -20,11 +21,24 @@
 
 #define JMP_AB  0x4C
 #define JSR     0x20
+#define RTS     0x60
+
+#define TXS     0x9A
+#define TSX     0xBA
+#define PHA     0x48
+#define PLA     0x68
+#define PHP     0x08
+#define PLP     0x28
 
 #define CMP_IM  0xC9
 #define CMP_AB  0xCD
 
 #define INC_AB  0xEE
+
+#define LDX_IM  0xA2
+#define LDX_AB  0xAE
+#define LDY_IM  0xA0
+#define LDY_AB  0xAC
 
 #define TAX     0xAA
 #define TXA     0x8A
