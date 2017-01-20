@@ -74,6 +74,25 @@ uint16_t abs_mem(vcpu* cpu, uint8_t* mem) {
   return m;
 }
 
+uint16_t absx_mem(vcpu* cpu, uint8_t* mem) {
+  uint16_t m = abs_mem(cpu, mem) + cpu->reg_x;
+  return m;
+}
+
+uint16_t absy_mem(vcpu* cpu, uint8_t* mem) {
+  uint16_t m = abs_mem(cpu, mem) + cpu->reg_y;
+  return m;
+}
+
+uint16_t zero_mem(vcpu* cpu, uint8_t* mem) {
+  return (uint16_t)mem[cpu->pc++];
+}
+
+uint16_t zerox_mem(vcpu* cpu, uint8_t* mem) {
+  uint16_t m = zero_mem(cpu, mem) + cpu->reg_x;
+  return m & 0x00FF;
+}
+
 // Stack lives in memory between 0x0100 and 0x01ff, reg_sp initially at 0xff
 
 void stack_push(vcpu* cpu, uint8_t* mem, uint8_t v) {
@@ -135,8 +154,28 @@ int main(int argc, char *argv[]) {
         add(cpu, mem, mem[cpu->pc++]);
         break;
 
+      case ADC_ZE:
+        t = zero_mem(cpu, mem);
+        add(cpu, mem, mem[t]);
+        break;
+
+      case ADC_ZX:
+        t = zerox_mem(cpu, mem);
+        add(cpu, mem, mem[t]);
+        break;
+
       case ADC_AB:
         t = abs_mem(cpu, mem);
+        add(cpu, mem, mem[t]);
+        break;
+
+      case ADC_AX:
+        t = absx_mem(cpu, mem);
+        add(cpu, mem, mem[t]);
+        break;
+
+      case ADC_AY:
+        t = absy_mem(cpu, mem);
         add(cpu, mem, mem[t]);
         break;
 
@@ -145,8 +184,36 @@ int main(int argc, char *argv[]) {
         break;
 
       // Store
-      case STA:
+      case STA_ZE:
+        t = zero_mem(cpu, mem);
+        mem[t] = cpu->reg_a;
+        mem_write = 1;
+        mem_write_location = t;
+        break;
+
+      case STA_ZX:
+        t = zerox_mem(cpu, mem);
+        mem[t] = cpu->reg_a;
+        mem_write = 1;
+        mem_write_location = t;
+        break;
+
+      case STA_AB:
         t = abs_mem(cpu, mem);
+        mem[t] = cpu->reg_a;
+        mem_write = 1;
+        mem_write_location = t;
+        break;
+
+      case STA_AX:
+        t = absx_mem(cpu, mem);
+        mem[t] = cpu->reg_a;
+        mem_write = 1;
+        mem_write_location = t;
+        break;
+
+      case STA_AY:
+        t = absy_mem(cpu, mem);
         mem[t] = cpu->reg_a;
         mem_write = 1;
         mem_write_location = t;
@@ -287,5 +354,6 @@ int main(int argc, char *argv[]) {
 
   }
 
+  printf("\n");
   return 0;
 }

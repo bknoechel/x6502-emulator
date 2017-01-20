@@ -4,11 +4,19 @@
 #define NOP     0xEA
 
 #define ADC_IM  0x69
+#define ADC_ZE  0x65
+#define ADC_ZX  0x75
 #define ADC_AB  0x6D
+#define ADC_AX  0x7D
+#define ADC_AY  0x79
 
 #define EXT     0xFF
 #define LDA_IM  0xA9
-#define STA     0x8D
+#define STA_ZE  0x85
+#define STA_ZX  0x95
+#define STA_AB  0x8D
+#define STA_AX  0x9D
+#define STA_AY  0x99
 
 #define BPL     0x10
 #define BMI     0x30
