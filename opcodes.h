@@ -9,14 +9,19 @@
 #define ADC_AB  0x6D
 #define ADC_AX  0x7D
 #define ADC_AY  0x79
+#define ADC_IX  0x61
+#define ADC_IY  0x71
 
 #define EXT     0xFF
 #define LDA_IM  0xA9
+
 #define STA_ZE  0x85
 #define STA_ZX  0x95
 #define STA_AB  0x8D
 #define STA_AX  0x9D
 #define STA_AY  0x99
+#define STA_IX  0x81
+#define STA_IY  0x91
 
 #define BPL     0x10
 #define BMI     0x30
