@@ -22,27 +22,39 @@ uint8_t get_memory_access_type(uint8_t opcode) {
   switch(opcode) {
     case ADC_IM:
       return MEM_TYPE_IM;
+
     case ADC_ZE:
+    case INC_ZE:
     case STA_ZE:
       return MEM_TYPE_ZE;
+
     case ADC_ZX:
+    case INC_ZX:
     case STA_ZX:
       return MEM_TYPE_ZX;
+
     case ADC_AB:
+    case INC_AB:
     case STA_AB:
       return MEM_TYPE_AB;
+
     case ADC_AX:
+    case INC_AX:
     case STA_AX:
       return MEM_TYPE_AX;
+
     case ADC_AY:
     case STA_AY:
       return MEM_TYPE_AY;
+
     case ADC_IX:
     case STA_IX:
       return MEM_TYPE_IX;
+
     case ADC_IY:
     case STA_IY:
       return MEM_TYPE_IY;
+
     default:
       return 0;
   }

@@ -15,6 +15,11 @@
 #define EXT     0xFF
 #define LDA_IM  0xA9
 
+#define INC_ZE  0x44
+#define INC_ZX  0xF6
+#define INC_AB  0xEE
+#define INC_AX  0xFE
+
 #define STA_ZE  0x85
 #define STA_ZX  0x95
 #define STA_AB  0x8D
@@ -46,7 +51,6 @@
 #define CMP_IM  0xC9
 #define CMP_AB  0xCD
 
-#define INC_AB  0xEE
 
 #define LDX_IM  0xA2
 #define LDX_AB  0xAE

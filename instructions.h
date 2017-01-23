@@ -6,7 +6,8 @@
 
 
 #define ADC       0x01
-#define STA       0x02
+#define INC       0x02
+#define STA       0x03
 
 
 
@@ -22,7 +23,13 @@ uint8_t get_instruction(uint8_t opcode) {
     case ADC_IX:
     case ADC_IY:
       return ADC;
-      
+
+    case INC_ZE:
+    case INC_ZX:
+    case INC_AB:
+    case INC_AX:
+      return INC;
+
     case STA_ZE:
     case STA_ZX:
     case STA_AB:

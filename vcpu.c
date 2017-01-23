@@ -32,12 +32,12 @@ void add(vcpu* cpu, uint8_t v) {
   }
 }
 
-void sta(vcpu* cpu, uint8_t* location) {
-  (*location) = cpu->reg_a;
+void inc(vcpu* cpu, uint8_t* location) {
+  (*location)++;
 }
 
-void inc(uint8_t* reg) {
-  (*reg)++;
+void sta(vcpu* cpu, uint8_t* location) {
+  (*location) = cpu->reg_a;
 }
 
 void dec(uint8_t* reg) {
@@ -110,6 +110,12 @@ int main(int argc, char *argv[]) {
       case ADC:
         value_from_mem = memory_read(mem, mem_access_type, cpu);
         add(cpu, value_from_mem);
+        break;
+
+      case INC:
+        mem_write_location = memory_write_location(mem, mem_access_type, cpu);
+        inc(cpu, &mem[mem_write_location]);
+        mem_write = 1;
         break;
 
       case STA:
@@ -210,14 +216,6 @@ int main(int argc, char *argv[]) {
           cmp(cpu, &(cpu->reg_a), mem[t]);
           break;
 
-        // Increment memory
-        case INC_AB:
-          t = abs_mem(cpu, mem);
-          mem[t]++;
-          mem_write = 1;
-          mem_write_location = t;
-          break;
-
         // Load x,y
         case LDX_IM:
           cpu->reg_x = mem[cpu->pc++];
@@ -241,7 +239,7 @@ int main(int argc, char *argv[]) {
           break;
 
         case INX:
-          inc(&(cpu->reg_x));
+          inc(cpu, &(cpu->reg_x));
           break;
 
         case TAY:
@@ -257,7 +255,7 @@ int main(int argc, char *argv[]) {
           break;
 
         case INY:
-          inc(&(cpu->reg_y));
+          inc(cpu, &(cpu->reg_y));
           break;
 
         default:
