@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include "cpu.h"
-#include "opcodes.h"
+#include "constants.h"
 #include "instructions.h"
 #include "memory_access.h"
 
@@ -95,37 +95,42 @@ int main(int argc, char *argv[]) {
   uint8_t mem_access_type;
   uint8_t mem_write = 0;
   uint16_t mem_write_location = 0;
+  uint8_t* mem_lookup;
 
   uint8_t opcode;
+  uint8_t* instruction_lookup;
   uint8_t instruction;
+
+  mem_lookup = get_memory_lookup();
+  instruction_lookup = get_instruction_lookup();
 
   while (RUN) {
 
     opcode = mem[cpu->pc++];
-    instruction = get_instruction(opcode);
-    mem_access_type = get_memory_access_type(opcode);
+    instruction = instruction_lookup[opcode];
+    mem_access_type = mem_lookup[opcode];
     run_instruction = 1;
 
     switch(instruction) {
-      case ADC:
+      case IN_ADC:
         value_from_mem = memory_read(mem, mem_access_type, cpu);
         add(cpu, value_from_mem);
         break;
 
-      case INC:
+      case IN_INC:
         mem_write_location = memory_write_location(mem, mem_access_type, cpu);
         inc(cpu, &mem[mem_write_location]);
         mem_write = 1;
         break;
 
-      case STA:
+      case IN_STA:
         mem_write_location = memory_write_location(mem, mem_access_type, cpu);
         sta(cpu, &mem[mem_write_location]);
         mem_write = 1;
         break;
 
       default:
-        // We didn't find an instruction, switch opcode
+        // We didn't find an instruction, switch on opcode
         run_instruction = 0;
     }
 
@@ -180,7 +185,7 @@ int main(int argc, char *argv[]) {
           cpu->pc = t;
           break;
 
-        case JSR:
+        case JSR_AB:
           t = cpu->pc + 1; // Next op - 1
           stack_push(cpu, mem, (uint8_t)((t & 0xff00) >> 8));
           stack_push(cpu, mem, (uint8_t)(t & 0x00ff));
