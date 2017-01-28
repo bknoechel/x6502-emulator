@@ -26,7 +26,7 @@ uint8_t * get_instruction_lookup() {
   t[AND_IX] = IN_AND;
   t[AND_IY] = IN_AND;
 
-  t[ASL_IM] = IN_ASL;
+  t[ASL_A] = IN_ASL;
   t[ASL_ZE] = IN_ASL;
   t[ASL_ZX] = IN_ASL;
   t[ASL_AB] = IN_ASL;

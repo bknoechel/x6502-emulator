@@ -20,7 +20,7 @@ enum enum_opcodes {
   AND_IX  = 0x21,
   AND_IY  = 0x31,
 
-  ASL_IM  = 0x0A,
+  ASL_A   = 0x0A,
   ASL_ZE  = 0x06,
   ASL_ZX  = 0x16,
   ASL_AB  = 0x0E,

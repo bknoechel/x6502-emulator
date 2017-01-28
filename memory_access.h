@@ -9,6 +9,9 @@ uint16_t memory_location_inc_pc(uint8_t* mem, uint8_t memory_type, vcpu* cpu);
 // Return memory location by reading two consecutive bytes in memory to get
 // uint16_t address
 uint8_t memory_read(uint8_t* mem, uint8_t memory_type, vcpu* cpu) {
+  if (memory_type == ME_A) {
+    return cpu->reg_a;
+  }
   uint16_t location = memory_location_inc_pc(mem, memory_type, cpu);
   return mem[location];
 }
@@ -113,7 +116,7 @@ uint8_t* get_memory_lookup() {
   t[AND_IX] = ME_IX;
   t[AND_IY] = ME_IY;
 
-  t[ASL_IM] = ME_IM;
+  t[ASL_A]  = ME_A;
   t[ASL_ZE] = ME_ZE;
   t[ASL_ZX] = ME_ZX;
   t[ASL_AB] = ME_AB;

@@ -30,6 +30,30 @@ void add(vcpu* cpu, uint8_t v) {
   }
 }
 
+void and(vcpu* cpu, uint8_t v) {
+  uint16_t t = v | cpu->reg_a;
+  if (t > 0xFF) {
+    cpu->reg_st |= CARRY_FLAG;
+  }
+  cpu->reg_a = (uint8_t) t;
+}
+
+void asl(vcpu* cpu, uint8_t v) {
+  uint16_t t = v << 1;
+  if (t > 0xFF) {
+    cpu->reg_st |= CARRY_FLAG;
+  }
+  cpu->reg_a = (uint8_t) t;
+}
+
+void eor(vcpu* cpu, uint8_t v) {
+  cpu->reg_a = cpu->reg_a ^ v;
+}
+
+void ora(vcpu* cpu, uint8_t v) {
+  cpu->reg_a = cpu->reg_a | v;
+}
+
 void inc(vcpu* cpu, uint8_t* location) {
   (*location)++;
 }
@@ -100,10 +124,35 @@ int run_x6502(uint8_t* mem) {
         add(cpu, value_from_mem);
         break;
 
+      case IN_AND:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        and(cpu, value_from_mem);
+        break;
+
+      case IN_ASL:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        asl(cpu, value_from_mem);
+        break;
+
+      case IN_EOR:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        eor(cpu, value_from_mem);
+        break;
+
       case IN_INC:
         mem_write_location = memory_write_location(mem, mem_access_type, cpu);
         inc(cpu, &mem[mem_write_location]);
         mem_write = 1;
+        break;
+
+      case IN_LDA:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        cpu->reg_a = value_from_mem;
+        break;
+
+      case IN_ORA:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        ora(cpu, value_from_mem);
         break;
 
       case IN_STA:
