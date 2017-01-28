@@ -9,8 +9,6 @@
 #include "instructions.h"
 #include "memory_access.h"
 
-#define MEMSIZE 65536
-
 #define NEGATIVE_FLAG 0x80
 #define OVERFLOW_FLAG 0x40
 #define BREAK_FLAG 0x10
@@ -64,21 +62,7 @@ uint8_t stack_pull(vcpu* cpu, uint8_t* mem) {
   return v;
 }
 
-int main(int argc, char *argv[]) {
-  char* fn = "a.o65"; // Hardcode xa output
-
-  // Memory (not part of cpu struct)
-  uint8_t* mem = (uint8_t*) malloc(sizeof(uint8_t)*MEMSIZE);
-
-  // Write assembly into memory starting at 0x0000, add EXT (0xFF) opcode at end
-  FILE *f = fopen(fn, "r");
-  int ins;
-  int c = 0x1000;
-  while ((ins = fgetc(f)) != EOF) {
-    mem[c++] = (uint8_t) ins;
-  }
-  mem[c++] = EXT;
-
+int run_x6502(uint8_t* mem) {
   // Struct for cpu
   vcpu* cpu = new_cpu();
 
@@ -103,7 +87,6 @@ int main(int argc, char *argv[]) {
 
   mem_lookup = get_memory_lookup();
   instruction_lookup = get_instruction_lookup();
-
   while (RUN) {
 
     opcode = mem[cpu->pc++];
@@ -274,9 +257,9 @@ int main(int argc, char *argv[]) {
       mem_write = 0;
       mem_write_location = 0x0000;
     }
-
   }
 
+  destroy_cpu(cpu);
   printf("\n");
   return 0;
 }

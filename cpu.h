@@ -24,4 +24,8 @@ vcpu* new_cpu() {
   return ptr;
 }
 
+void destroy_cpu(vcpu* ptr) {
+  free(ptr);
+}
+
 #endif
