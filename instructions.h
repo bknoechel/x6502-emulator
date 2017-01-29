@@ -32,6 +32,9 @@ uint8_t * get_instruction_lookup() {
   t[ASL_AB] = IN_ASL;
   t[ASL_AX] = IN_ASL;
 
+  t[BIT_ZE] = IN_BIT;
+  t[BIT_AB] = IN_BIT;
+
   t[CMP_IM] = IN_CMP;
   t[CMP_ZE] = IN_CMP;
   t[CMP_ZX] = IN_CMP;

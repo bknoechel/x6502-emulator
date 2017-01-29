@@ -17,52 +17,53 @@
 #define ZERO_FLAG 0x02
 #define CARRY_FLAG 0x01
 
+void set_flag(vcpu* cpu, uint8_t FLAG, uint8_t v) {
+  if (v) {
+    cpu->reg_st |= FLAG;
+  } else {
+    cpu->reg_st &= ~(FLAG);
+  }
+}
+
 void add(vcpu* cpu, uint8_t v) {
   uint16_t t;
   if (cpu->reg_st & DECIMAL_FLAG) {
 
   } else {
     t = v + cpu->reg_a;
-    if (t > 0xFF) {
-      cpu->reg_st |= CARRY_FLAG;
-    }
+    set_flag(cpu, CARRY_FLAG, t > 0xFF);
     cpu->reg_a = (uint8_t) t;
   }
 }
 
 void and(vcpu* cpu, uint8_t v) {
   uint16_t t = v | cpu->reg_a;
-  if (t > 0xFF) {
-    cpu->reg_st |= CARRY_FLAG;
-  }
+  set_flag(cpu, CARRY_FLAG, t > 0xFF);
   cpu->reg_a = (uint8_t) t;
 }
 
 void asl(vcpu* cpu, uint8_t v) {
   uint16_t t = v << 1;
-  if (t > 0xFF) {
-    cpu->reg_st |= CARRY_FLAG;
-  }
+  set_flag(cpu, CARRY_FLAG, t > 0xFF);
   cpu->reg_a = (uint8_t) t;
 }
+
+void bit(vcpu* cpu, uint8_t v) {
+  uint16_t t = cpu->reg_a & v;
+  set_flag(cpu, ZERO_FLAG, t);
+  set_flag(cpu, OVERFLOW_FLAG, t);
+  set_flag(cpu, NEGATIVE_FLAG, t);
+}
+
+void branch(vcpu* cpu, uint8_t* mem) {
+  cpu->pc += (int8_t) mem[cpu->pc];
+  cpu->pc++;
+}
+
 void cmp_with_reg(vcpu* cpu, uint8_t reg, uint8_t v) {
-  if (reg >= v) {
-    cpu->reg_st |= CARRY_FLAG;
-  } else {
-    cpu->reg_st &= ~(CARRY_FLAG);
-  }
-
-  if (reg == v) {
-    cpu->reg_st |= ZERO_FLAG;
-  } else {
-    cpu->reg_st &= ~(ZERO_FLAG);
-  }
-
-  if ((reg - v) & 0x80) {
-    cpu->reg_st |= NEGATIVE_FLAG;
-  } else {
-    cpu->reg_st &= ~(NEGATIVE_FLAG);
-  }
+  set_flag(cpu, CARRY_FLAG, reg >= v);
+  set_flag(cpu, ZERO_FLAG, reg == v);
+  set_flag(cpu, NEGATIVE_FLAG, (reg - v) & 0x80);
 }
 
 void cmp(vcpu* cpu, uint8_t v) {
@@ -91,11 +92,7 @@ void inc(vcpu* cpu, uint8_t* location) {
 
 void lsr(vcpu* cpu, uint8_t v) {
   // If right most bit is set, set carry, otherwise unset
-  if (v & 0x01) {
-    cpu->reg_st |= CARRY_FLAG;
-  } else {
-    cpu->reg_st &= ~(CARRY_FLAG);
-  }
+  set_flag(cpu, CARRY_FLAG, v & 0x01);
   cpu->reg_a = v >> 1;
 }
 
@@ -109,13 +106,7 @@ void rol(vcpu* cpu, uint8_t v) {
   if (cpu->reg_st & CARRY_FLAG) {
     t++;
   }
-  if (t > 0xFF) {
-    // Set carry
-    cpu->reg_st |= CARRY_FLAG;
-  } else {
-    // Unset carry
-    cpu->reg_st &= ~(CARRY_FLAG);
-  }
+  set_flag(cpu, CARRY_FLAG, t > 0xFF);
   cpu->reg_a = (uint8_t) t;
 }
 
@@ -126,11 +117,7 @@ void ror(vcpu* cpu, uint8_t v) {
     carry = 0x80;
   }
   // If right most bit is set, set carry, otherwise unset
-  if (v & 0x01) {
-    cpu->reg_st |= CARRY_FLAG;
-  } else {
-    cpu->reg_st &= ~(CARRY_FLAG);
-  }
+  set_flag(cpu, CARRY_FLAG, v & 0x01);
   // Shift, assign left most bit
   cpu->reg_a = (v >> 1) | carry;
 }
@@ -141,11 +128,7 @@ void sbc(vcpu* cpu, uint8_t v) {
 
   } else {
     t = cpu->reg_a - v;
-    if (t > 0xFF00) {
-      cpu->reg_st |= CARRY_FLAG;
-    } else {
-      cpu->reg_st &= ~(CARRY_FLAG);
-    }
+    set_flag(cpu, CARRY_FLAG, t > 0xFF00);
     cpu->reg_a = (uint8_t) t;
   }
 }
@@ -222,6 +205,11 @@ int run_x6502(uint8_t* mem) {
       case IN_ASL:
         value_from_mem = memory_read(mem, mem_access_type, cpu);
         asl(cpu, value_from_mem);
+        break;
+
+      case IN_BIT:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        bit(cpu, value_from_mem);
         break;
 
       case IN_CMP:
@@ -326,60 +314,91 @@ int run_x6502(uint8_t* mem) {
           RUN = 0;
           break;
 
+        // Branch Instructions
         case BPL:
+          if (!(cpu->reg_st & NEGATIVE_FLAG)) {
+            branch(cpu, mem);
+          }
           break;
 
         case BMI:
+          if (cpu->reg_st & NEGATIVE_FLAG) {
+            branch(cpu, mem);
+          }
           break;
 
         case BVC:
+          if (!(cpu->reg_st & OVERFLOW_FLAG)) {
+            branch(cpu, mem);
+          }
           break;
 
         case BVS:
+          if (cpu->reg_st & OVERFLOW_FLAG) {
+            branch(cpu, mem);
+          }
           break;
 
         case BCC:
+          if (!(cpu->reg_st & CARRY_FLAG)) {
+            branch(cpu, mem);
+          }
           break;
 
         case BCS:
+          if (cpu->reg_st & CARRY_FLAG) {
+            branch(cpu, mem);
+          }
           break;
 
         case BNE:
           if (!(cpu->reg_st & ZERO_FLAG)) {
-            cpu->pc += (int8_t) mem[cpu->pc];
+            branch(cpu, mem);
           }
-          cpu->pc++;
           break;
 
         case BEQ:
+          if (cpu->reg_st & ZERO_FLAG) {
+            branch(cpu, mem);
+          }
           break;
 
+        // Flag (Processor Status) Instructions
         case CLC:
+          set_flag(cpu, CARRY_FLAG, 0);
           break;
 
         case SEC:
+          set_flag(cpu, CARRY_FLAG, 1);
           break;
 
         case CLI:
+          set_flag(cpu, INTERRUPT_FLAG, 0);
           break;
 
         case SEI:
+          set_flag(cpu, INTERRUPT_FLAG, 1);
           break;
 
         case CLV:
+          set_flag(cpu, OVERFLOW_FLAG, 0);
           break;
 
         case CLD:
+          set_flag(cpu, DECIMAL_FLAG, 0);
           break;
 
         case SED:
+          set_flag(cpu, DECIMAL_FLAG, 1);
           break;
 
+        // Jump
         case JMP_AB:
           t = abs_mem(cpu, mem);
           cpu->pc = t;
           break;
 
+        // Jump to Subroutine
         case JSR_AB:
           t = cpu->pc + 1; // Next op - 1
           stack_push(cpu, mem, (uint8_t)((t & 0xff00) >> 8));
@@ -388,6 +407,7 @@ int run_x6502(uint8_t* mem) {
           cpu->pc = t;
           break;
 
+        // No Operation
         case NOP:
           cpu->pc++;
           break;
@@ -424,17 +444,28 @@ int run_x6502(uint8_t* mem) {
           inc(cpu, &(cpu->reg_y));
           break;
 
+        // Return from Interrupt
+        case RTI:
+          cpu->reg_st = stack_pull(cpu, mem);
+          t = (uint16_t)stack_pull(cpu, mem);
+          t = t | (uint16_t)(stack_pull(cpu, mem) << 8);
+          cpu->pc = t;
+          break;
+
+        // Return from Subroutine
         case RTS:
           t = (uint16_t)stack_pull(cpu, mem);
           t = t | (uint16_t)(stack_pull(cpu, mem) << 8);
-          cpu-> pc = t + 1;
+          cpu->pc = t + 1;
           break;
 
-        // Stack
+        // Stack Instructions
         case TXS:
+          cpu->reg_sp = cpu->reg_x;
           break;
 
         case TSX:
+          cpu->reg_x = cpu->reg_sp;
           break;
 
         case PHA:
@@ -446,9 +477,11 @@ int run_x6502(uint8_t* mem) {
           break;
 
         case PHP:
+          stack_push(cpu, mem, cpu->reg_st);
           break;
 
         case PLP:
+          cpu->reg_st = stack_pull(cpu, mem);
           break;
 
         default:
