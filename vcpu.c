@@ -45,31 +45,121 @@ void asl(vcpu* cpu, uint8_t v) {
   }
   cpu->reg_a = (uint8_t) t;
 }
+void cmp_with_reg(vcpu* cpu, uint8_t reg, uint8_t v) {
+  if (reg >= v) {
+    cpu->reg_st |= CARRY_FLAG;
+  } else {
+    cpu->reg_st &= ~(CARRY_FLAG);
+  }
+
+  if (reg == v) {
+    cpu->reg_st |= ZERO_FLAG;
+  } else {
+    cpu->reg_st &= ~(ZERO_FLAG);
+  }
+
+  if ((reg - v) & 0x80) {
+    cpu->reg_st |= NEGATIVE_FLAG;
+  } else {
+    cpu->reg_st &= ~(NEGATIVE_FLAG);
+  }
+}
+
+void cmp(vcpu* cpu, uint8_t v) {
+  cmp_with_reg(cpu, cpu->reg_a, v);
+}
+
+void cpx(vcpu* cpu, uint8_t v) {
+  cmp_with_reg(cpu, cpu->reg_x, v);
+}
+
+void cpy(vcpu* cpu, uint8_t v) {
+  cmp_with_reg(cpu, cpu->reg_y, v);
+}
+
+void dec(vcpu* cpu, uint8_t* location) {
+  (*location)--;
+}
 
 void eor(vcpu* cpu, uint8_t v) {
   cpu->reg_a = cpu->reg_a ^ v;
-}
-
-void ora(vcpu* cpu, uint8_t v) {
-  cpu->reg_a = cpu->reg_a | v;
 }
 
 void inc(vcpu* cpu, uint8_t* location) {
   (*location)++;
 }
 
+void lsr(vcpu* cpu, uint8_t v) {
+  // If right most bit is set, set carry, otherwise unset
+  if (v & 0x01) {
+    cpu->reg_st |= CARRY_FLAG;
+  } else {
+    cpu->reg_st &= ~(CARRY_FLAG);
+  }
+  cpu->reg_a = v >> 1;
+}
+
+void ora(vcpu* cpu, uint8_t v) {
+  cpu->reg_a = cpu->reg_a | v;
+}
+
+void rol(vcpu* cpu, uint8_t v) {
+  uint16_t t = v << 1;
+  // Move carry into right most bit
+  if (cpu->reg_st & CARRY_FLAG) {
+    t++;
+  }
+  if (t > 0xFF) {
+    // Set carry
+    cpu->reg_st |= CARRY_FLAG;
+  } else {
+    // Unset carry
+    cpu->reg_st &= ~(CARRY_FLAG);
+  }
+  cpu->reg_a = (uint8_t) t;
+}
+
+void ror(vcpu* cpu, uint8_t v) {
+  // If carry is set, set left most bit on temp var
+  uint8_t carry = 0;
+  if (cpu->reg_st & CARRY_FLAG) {
+    carry = 0x80;
+  }
+  // If right most bit is set, set carry, otherwise unset
+  if (v & 0x01) {
+    cpu->reg_st |= CARRY_FLAG;
+  } else {
+    cpu->reg_st &= ~(CARRY_FLAG);
+  }
+  // Shift, assign left most bit
+  cpu->reg_a = (v >> 1) | carry;
+}
+
+void sbc(vcpu* cpu, uint8_t v) {
+  uint16_t t;
+  if (cpu->reg_st & DECIMAL_FLAG) {
+
+  } else {
+    t = cpu->reg_a - v;
+    if (t > 0xFF00) {
+      cpu->reg_st |= CARRY_FLAG;
+    } else {
+      cpu->reg_st &= ~(CARRY_FLAG);
+    }
+    cpu->reg_a = (uint8_t) t;
+  }
+}
+
 void sta(vcpu* cpu, uint8_t* location) {
   (*location) = cpu->reg_a;
 }
 
-void dec(uint8_t* reg) {
-  (*reg)--;
+void stx(vcpu* cpu, uint8_t* location) {
+  (*location) = cpu->reg_x;
 }
 
-void cmp(vcpu* cpu, uint8_t* reg, uint8_t v) {
-  if ((*reg) == v) {
-    cpu->reg_st |= ZERO_FLAG;
-  }
+void sty(vcpu* cpu, uint8_t* location) {
+  (*location) = cpu->reg_y;
 }
 
 // Stack lives in memory between 0x0100 and 0x01ff, reg_sp initially at 0xff
@@ -134,6 +224,27 @@ int run_x6502(uint8_t* mem) {
         asl(cpu, value_from_mem);
         break;
 
+      case IN_CMP:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        cmp(cpu, value_from_mem);
+        break;
+
+      case IN_CPX:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        cpx(cpu, value_from_mem);
+        break;
+
+      case IN_CPY:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        cpy(cpu, value_from_mem);
+        break;
+
+      case IN_DEC:
+        mem_write_location = memory_write_location(mem, mem_access_type, cpu);
+        dec(cpu, &mem[mem_write_location]);
+        mem_write = 1;
+        break;
+
       case IN_EOR:
         value_from_mem = memory_read(mem, mem_access_type, cpu);
         eor(cpu, value_from_mem);
@@ -150,14 +261,56 @@ int run_x6502(uint8_t* mem) {
         cpu->reg_a = value_from_mem;
         break;
 
+      case IN_LDX:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        cpu->reg_x = value_from_mem;
+        break;
+
+      case IN_LDY:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        cpu->reg_y = value_from_mem;
+        break;
+
+      case IN_LSR:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        lsr(cpu, value_from_mem);
+        break;
+
       case IN_ORA:
         value_from_mem = memory_read(mem, mem_access_type, cpu);
         ora(cpu, value_from_mem);
         break;
 
+      case IN_ROL:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        rol(cpu, value_from_mem);
+        break;
+
+      case IN_ROR:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        ror(cpu, value_from_mem);
+        break;
+
+      case IN_SBC:
+        value_from_mem = memory_read(mem, mem_access_type, cpu);
+        sbc(cpu, value_from_mem);
+        break;
+
       case IN_STA:
         mem_write_location = memory_write_location(mem, mem_access_type, cpu);
         sta(cpu, &mem[mem_write_location]);
+        mem_write = 1;
+        break;
+
+      case IN_STX:
+        mem_write_location = memory_write_location(mem, mem_access_type, cpu);
+        stx(cpu, &mem[mem_write_location]);
+        mem_write = 1;
+        break;
+
+      case IN_STY:
+        mem_write_location = memory_write_location(mem, mem_access_type, cpu);
+        sty(cpu, &mem[mem_write_location]);
         mem_write = 1;
         break;
 
@@ -173,15 +326,6 @@ int run_x6502(uint8_t* mem) {
           RUN = 0;
           break;
 
-        case NOP:
-          cpu->pc++;
-          break;
-
-        case LDA_IM:
-          cpu->reg_a = mem[cpu->pc++];
-          break;
-
-        // Branch
         case BPL:
           break;
 
@@ -210,7 +354,26 @@ int run_x6502(uint8_t* mem) {
         case BEQ:
           break;
 
-        // Jump
+        case CLC:
+          break;
+
+        case SEC:
+          break;
+
+        case CLI:
+          break;
+
+        case SEI:
+          break;
+
+        case CLV:
+          break;
+
+        case CLD:
+          break;
+
+        case SED:
+          break;
 
         case JMP_AB:
           t = abs_mem(cpu, mem);
@@ -225,44 +388,11 @@ int run_x6502(uint8_t* mem) {
           cpu->pc = t;
           break;
 
-        case RTS:
-          t = (uint16_t)stack_pull(cpu, mem);
-          t = t | (uint16_t)(stack_pull(cpu, mem) << 8);
-          cpu-> pc = t + 1;
+        case NOP:
+          cpu->pc++;
           break;
 
-        // Stack
-        case TXS:
-          break;
-
-        case PHA:
-          stack_push(cpu, mem, cpu->reg_a);
-          break;
-
-        case PLA:
-          cpu->reg_a = stack_pull(cpu, mem);
-          break;
-
-        // Compare
-        case CMP_IM:
-          cmp(cpu, &(cpu->reg_a), mem[cpu->pc++]);
-          break;
-
-        case CMP_AB:
-          t = abs_mem(cpu, mem);
-          cmp(cpu, &(cpu->reg_a), mem[t]);
-          break;
-
-        // Load x,y
-        case LDX_IM:
-          cpu->reg_x = mem[cpu->pc++];
-          break;
-
-        case LDY_IM:
-          cpu->reg_y = mem[cpu->pc++];
-          break;
-
-        // Transfer, increment, decrement x/y
+        // Register Instructions
         case TAX:
           cpu->reg_x = cpu->reg_a;
           break;
@@ -272,7 +402,7 @@ int run_x6502(uint8_t* mem) {
           break;
 
         case DEX:
-          dec(&(cpu->reg_x));
+          dec(cpu, &(cpu->reg_x));
           break;
 
         case INX:
@@ -288,11 +418,37 @@ int run_x6502(uint8_t* mem) {
           break;
 
         case DEY:
-          dec(&(cpu->reg_y));
-          break;
+          dec(cpu, &(cpu->reg_y));
 
         case INY:
           inc(cpu, &(cpu->reg_y));
+          break;
+
+        case RTS:
+          t = (uint16_t)stack_pull(cpu, mem);
+          t = t | (uint16_t)(stack_pull(cpu, mem) << 8);
+          cpu-> pc = t + 1;
+          break;
+
+        // Stack
+        case TXS:
+          break;
+
+        case TSX:
+          break;
+
+        case PHA:
+          stack_push(cpu, mem, cpu->reg_a);
+          break;
+
+        case PLA:
+          cpu->reg_a = stack_pull(cpu, mem);
+          break;
+
+        case PHP:
+          break;
+
+        case PLP:
           break;
 
         default:

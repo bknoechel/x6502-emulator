@@ -42,3 +42,8 @@ LDA       #$02
 ORA       $FF10
 ADC       #$30
 STA       $FF00
+
+; SBC 0x01 from 0x39, should see '8'
+LDA       #$39
+SBC       #$01
+STA       $FF00
