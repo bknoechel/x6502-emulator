@@ -1,8 +1,6 @@
-vcpu - Virtual CPU
+x6502 Emulator
 
-This is a test project to emulate a x6502 processor. My objective is to learn
-more about computers so I will attempt to write my own emulator in C.
+This is a project to emulate a x6502 processor. This was suggested as a project to help learn about low level computer concepts. This was also a chance for me to write something in C. This is strictly a project for my own learning and interest.
 
-There is a debian package xa65 that is a cross-assembler and utility for
-65xx/65816 processors. You can run from command line with `xa'
+There is a debian package xa65 that is a cross-assembler and utility for 65xx/65816 processors. You can run from command line with `xa'. You can use that write and compile some small programs for the 6502 chip, and then my program will execute those instructions.
 
