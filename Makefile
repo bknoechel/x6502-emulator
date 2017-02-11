@@ -1,8 +1,9 @@
 CC=gcc
 CFLAGS=-Wall
+SRC=src/vcpu.c src/main.c
 
-all: vcpu.c
-	$(CC) $(CFLAGS) vcpu.c main.c -o out
+all: $(SRC)
+	$(CC) $(CFLAGS) $(SRC) -o x6502emu
 
 clean:
-	rm -f out
+	rm -f x6502emu
