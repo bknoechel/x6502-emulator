@@ -159,7 +159,7 @@ uint8_t stack_pull(vcpu* cpu, uint8_t* mem) {
   return v;
 }
 
-int run_x6502(uint8_t* mem) {
+int run_x6502(uint8_t* mem, FILE* file_out) {
   // Struct for cpu
   vcpu* cpu = new_cpu();
 
@@ -491,13 +491,14 @@ int run_x6502(uint8_t* mem) {
     }
 
     if (mem_write && mem_write_location == 0xFF00) {
-      printf("%c", mem[0xFF00]);
+      if (file_out) {
+        fprintf(file_out, "%c", mem[0xFF00]);
+      }
       mem_write = 0;
       mem_write_location = 0x0000;
     }
   }
 
   destroy_cpu(cpu);
-  printf("\n");
   return 0;
 }
