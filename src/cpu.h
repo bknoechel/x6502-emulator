@@ -24,6 +24,17 @@ vcpu* new_cpu() {
   return ptr;
 }
 
+// TODO: Remove this and find a better way to debug
+void write_cpu(vcpu* cpu) {
+  int i = 0;
+  printf("PC: %x, X: %x, Y: %x, AC: %x, SP: %x, ST:%x, ST:", cpu->pc, cpu->reg_x, cpu->reg_y, cpu->reg_a, cpu->reg_sp, cpu->reg_st);
+  for (; i < 8; i++) {
+    char c = cpu->reg_st & (1 << (7 - i)) ? '1' : '0';
+    printf("%c", c);
+  }
+  printf("\n");
+}
+
 void destroy_cpu(vcpu* ptr) {
   free(ptr);
 }

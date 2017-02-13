@@ -9,6 +9,17 @@
 #include "instructions.h"
 #include "memory_access.h"
 
+
+/*
+*   N(S) - negative(sign)
+*   V    - overflow
+*   B    - break
+*   D    - decimal
+*   I    - interrupt
+*   Z    - zero
+*   C    - carry
+*/
+
 #define NEGATIVE_FLAG 0x80
 #define OVERFLOW_FLAG 0x40
 #define BREAK_FLAG 0x10
@@ -25,34 +36,47 @@ void set_flag(vcpu* cpu, uint8_t FLAG, uint8_t v) {
   }
 }
 
+uint8_t get_flag(vcpu* cpu, uint8_t FLAG) {
+  return (cpu->reg_st & FLAG) ? 1 : 0;
+}
+
 void add(vcpu* cpu, uint8_t v) {
   uint16_t t;
   if (cpu->reg_st & DECIMAL_FLAG) {
 
   } else {
-    t = v + cpu->reg_a;
+    t = v + cpu->reg_a + get_flag(cpu, CARRY_FLAG);
     set_flag(cpu, CARRY_FLAG, t > 0xFF);
-    cpu->reg_a = (uint8_t) t;
+    t &= 0xFF;
   }
+  set_flag(cpu, NEGATIVE_FLAG, t & 0x80);
+  uint8_t ops_same_sign = (v & 0x80) == (cpu->reg_a & 0x80);
+  uint8_t result_same_sign = (t & 0x80) == (cpu->reg_a & 0x80);
+  set_flag(cpu, OVERFLOW_FLAG, ops_same_sign && !result_same_sign);
+  set_flag(cpu, ZERO_FLAG, t == 0);
+  cpu->reg_a = (uint8_t) t;
 }
 
 void and(vcpu* cpu, uint8_t v) {
   uint16_t t = v | cpu->reg_a;
   set_flag(cpu, CARRY_FLAG, t > 0xFF);
+  set_flag(cpu, ZERO_FLAG, t == 0);
   cpu->reg_a = (uint8_t) t;
 }
 
 void asl(vcpu* cpu, uint8_t v) {
   uint16_t t = v << 1;
+  set_flag(cpu, NEGATIVE_FLAG, t & 0x80);
+  set_flag(cpu, ZERO_FLAG, t == 0);
   set_flag(cpu, CARRY_FLAG, t > 0xFF);
   cpu->reg_a = (uint8_t) t;
 }
 
 void bit(vcpu* cpu, uint8_t v) {
   uint16_t t = cpu->reg_a & v;
-  set_flag(cpu, ZERO_FLAG, t);
-  set_flag(cpu, OVERFLOW_FLAG, t);
   set_flag(cpu, NEGATIVE_FLAG, t);
+  set_flag(cpu, OVERFLOW_FLAG, t);
+  set_flag(cpu, ZERO_FLAG, t);
 }
 
 void branch(vcpu* cpu, uint8_t* mem) {
@@ -61,9 +85,9 @@ void branch(vcpu* cpu, uint8_t* mem) {
 }
 
 void cmp_with_reg(vcpu* cpu, uint8_t reg, uint8_t v) {
-  set_flag(cpu, CARRY_FLAG, reg >= v);
-  set_flag(cpu, ZERO_FLAG, reg == v);
   set_flag(cpu, NEGATIVE_FLAG, (reg - v) & 0x80);
+  set_flag(cpu, ZERO_FLAG, reg == v);
+  set_flag(cpu, CARRY_FLAG, reg >= v);
 }
 
 void cmp(vcpu* cpu, uint8_t v) {
@@ -80,24 +104,34 @@ void cpy(vcpu* cpu, uint8_t v) {
 
 void dec(vcpu* cpu, uint8_t* location) {
   (*location)--;
+  set_flag(cpu, NEGATIVE_FLAG, *location & 0x80);
+  set_flag(cpu, ZERO_FLAG, *location);
 }
 
 void eor(vcpu* cpu, uint8_t v) {
   cpu->reg_a = cpu->reg_a ^ v;
+  set_flag(cpu, NEGATIVE_FLAG, cpu->reg_a & 0x80);
+  set_flag(cpu, ZERO_FLAG, cpu->reg_a);
 }
 
 void inc(vcpu* cpu, uint8_t* location) {
   (*location)++;
+  set_flag(cpu, NEGATIVE_FLAG, *location & 0x80);
+  set_flag(cpu, ZERO_FLAG, *location);
 }
 
 void lsr(vcpu* cpu, uint8_t v) {
   // If right most bit is set, set carry, otherwise unset
   set_flag(cpu, CARRY_FLAG, v & 0x01);
   cpu->reg_a = v >> 1;
+  set_flag(cpu, NEGATIVE_FLAG, cpu->reg_a & 0x80);
+  set_flag(cpu, ZERO_FLAG, cpu->reg_a);
 }
 
 void ora(vcpu* cpu, uint8_t v) {
   cpu->reg_a = cpu->reg_a | v;
+  set_flag(cpu, NEGATIVE_FLAG, cpu->reg_a & 0x80);
+  set_flag(cpu, ZERO_FLAG, cpu->reg_a);
 }
 
 void rol(vcpu* cpu, uint8_t v) {
@@ -108,6 +142,8 @@ void rol(vcpu* cpu, uint8_t v) {
   }
   set_flag(cpu, CARRY_FLAG, t > 0xFF);
   cpu->reg_a = (uint8_t) t;
+  set_flag(cpu, NEGATIVE_FLAG, cpu->reg_a & 0x80);
+  set_flag(cpu, ZERO_FLAG, cpu->reg_a);
 }
 
 void ror(vcpu* cpu, uint8_t v) {
@@ -120,6 +156,8 @@ void ror(vcpu* cpu, uint8_t v) {
   set_flag(cpu, CARRY_FLAG, v & 0x01);
   // Shift, assign left most bit
   cpu->reg_a = (v >> 1) | carry;
+  set_flag(cpu, NEGATIVE_FLAG, cpu->reg_a & 0x80);
+  set_flag(cpu, ZERO_FLAG, cpu->reg_a);
 }
 
 void sbc(vcpu* cpu, uint8_t v) {
@@ -127,10 +165,15 @@ void sbc(vcpu* cpu, uint8_t v) {
   if (cpu->reg_st & DECIMAL_FLAG) {
 
   } else {
-    t = cpu->reg_a - v;
-    set_flag(cpu, CARRY_FLAG, t > 0xFF00);
-    cpu->reg_a = (uint8_t) t;
+    t = cpu->reg_a - v - !get_flag(cpu, CARRY_FLAG);
+    set_flag(cpu, CARRY_FLAG, t >= 0 && t <= 0xFF);
   }
+  set_flag(cpu, NEGATIVE_FLAG, t & 0x80);
+  uint8_t ops_same_sign = (v & 0x80) == (cpu->reg_a & 0x80);
+  uint8_t result_same_sign = (t & 0x80) == (cpu->reg_a & 0x80);
+  set_flag(cpu, OVERFLOW_FLAG, !ops_same_sign && !result_same_sign);
+  set_flag(cpu, ZERO_FLAG, t == 0);
+  cpu->reg_a = (uint8_t) t;
 }
 
 void sta(vcpu* cpu, uint8_t* location) {
@@ -190,6 +233,10 @@ int run_x6502(uint8_t* mem, FILE* file_out) {
     instruction = instruction_lookup[opcode];
     mem_access_type = mem_lookup[opcode];
     run_instruction = 1;
+
+    // TODO: Replace with proper logging/debugging
+    // For now, uncomment for cpu state at each step
+    // write_cpu(cpu);
 
     switch(instruction) {
       case IN_ADC:
