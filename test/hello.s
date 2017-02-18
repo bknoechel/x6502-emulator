@@ -1,4 +1,4 @@
-        LDA       #$02 
+        LDA       #$02
         STA       $FF02
         LDA       #$41    ; set 'A' to acc
         ADC       #$01    ; add 1

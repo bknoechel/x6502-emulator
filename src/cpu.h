@@ -2,7 +2,6 @@
 #define CPU
 
 typedef struct {
-
   uint16_t pc;
 
   uint8_t reg_x;
