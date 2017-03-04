@@ -108,7 +108,7 @@ enum enum_opcodes {
   LDY_ZE  = 0xA4,
   LDY_ZY  = 0xB4,
   LDY_AB  = 0xAC,
-  LDY_AY  = 0xBC,
+  LDY_AX  = 0xBC,
 
   LSR_A   = 0x4A,
   LSR_ZE  = 0x46,

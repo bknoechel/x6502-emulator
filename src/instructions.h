@@ -90,7 +90,7 @@ uint8_t * get_instruction_lookup() {
   t[LDY_ZE] = IN_LDY;
   t[LDY_ZY] = IN_LDY;
   t[LDY_AB] = IN_LDY;
-  t[LDY_AY] = IN_LDY;
+  t[LDY_AX] = IN_LDY;
 
   t[LSR_A] = IN_LSR;
   t[LSR_ZE] = IN_LSR;

@@ -1,3 +1,5 @@
 x6502emu
+x6502emu-test
 a.o65
 out.txt
+test/results.txt

@@ -177,7 +177,7 @@ uint8_t* get_memory_lookup() {
   t[LDY_ZE] = ME_ZE;
   t[LDY_ZY] = ME_ZY;
   t[LDY_AB] = ME_AB;
-  t[LDY_AY] = ME_AY;
+  t[LDY_AX] = ME_AX;
 
   t[LSR_A] = ME_A;
   t[LSR_ZE] = ME_ZE;

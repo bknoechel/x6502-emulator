@@ -5,6 +5,8 @@ TEST_DIR=./test
 CFLAGS=-Wall
 DEPS=src/loader.h
 
+.PHONY: all test clean
+
 all: $(VCPU)
 	$(CC) $(CFLAGS) $(VCPU) -o x6502emu
 

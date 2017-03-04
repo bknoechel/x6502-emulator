@@ -64,5 +64,6 @@ int main(int argc, char *argv[]) {
   fclose(fp_out);
 
   system("rm ./test/*.o65");
+  system("cmp --silent ./test/results.txt ./test/expected.txt || echo \"Warning! Unexpected test output\"");
   return 0;
 }

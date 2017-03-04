@@ -58,7 +58,7 @@ void add(vcpu* cpu, uint8_t v) {
 }
 
 void and(vcpu* cpu, uint8_t v) {
-  uint16_t t = v | cpu->reg_a;
+  uint16_t t = v & cpu->reg_a;
   set_flag(cpu, CARRY_FLAG, t > 0xFF);
   set_flag(cpu, ZERO_FLAG, t == 0);
   cpu->reg_a = (uint8_t) t;
@@ -190,15 +190,15 @@ void sty(vcpu* cpu, uint8_t* location) {
 
 // Stack lives in memory between 0x0100 and 0x01ff, reg_sp initially at 0xff
 void stack_push(vcpu* cpu, uint8_t* mem, uint8_t v) {
-  cpu->reg_sp--;
   uint16_t m = cpu->reg_sp | 0x0100;
   mem[m] = v;
+  cpu->reg_sp--;
 }
 
 uint8_t stack_pull(vcpu* cpu, uint8_t* mem) {
+  cpu->reg_sp++;
   uint16_t m = cpu->reg_sp | 0x0100;
   uint8_t v = mem[m];
-  cpu->reg_sp++;
   return v;
 }
 
@@ -229,14 +229,16 @@ int run_x6502(uint8_t* mem, FILE* file_out) {
   instruction_lookup = get_instruction_lookup();
   while (RUN) {
 
-    opcode = mem[cpu->pc++];
+    opcode = mem[cpu->pc];
     instruction = instruction_lookup[opcode];
     mem_access_type = mem_lookup[opcode];
     run_instruction = 1;
 
     // TODO: Replace with proper logging/debugging
     // For now, uncomment for cpu state at each step
-    // write_cpu(cpu);
+    // printf("OC: %x, ", opcode); write_cpu(cpu);
+
+    cpu->pc++;
 
     switch(instruction) {
       case IN_ADC:
@@ -365,48 +367,64 @@ int run_x6502(uint8_t* mem, FILE* file_out) {
         case BPL:
           if (!(cpu->reg_st & NEGATIVE_FLAG)) {
             branch(cpu, mem);
+          } else {
+            cpu->pc++;
           }
           break;
 
         case BMI:
           if (cpu->reg_st & NEGATIVE_FLAG) {
             branch(cpu, mem);
+          } else {
+            cpu->pc++;
           }
           break;
 
         case BVC:
           if (!(cpu->reg_st & OVERFLOW_FLAG)) {
             branch(cpu, mem);
+          } else {
+            cpu->pc++;
           }
           break;
 
         case BVS:
           if (cpu->reg_st & OVERFLOW_FLAG) {
             branch(cpu, mem);
+          } else {
+            cpu->pc++;
           }
           break;
 
         case BCC:
           if (!(cpu->reg_st & CARRY_FLAG)) {
             branch(cpu, mem);
+          } else {
+            cpu->pc++;
           }
           break;
 
         case BCS:
           if (cpu->reg_st & CARRY_FLAG) {
             branch(cpu, mem);
+          } else {
+            cpu->pc++;
           }
           break;
 
         case BNE:
           if (!(cpu->reg_st & ZERO_FLAG)) {
             branch(cpu, mem);
+          } else {
+            cpu->pc++;
           }
           break;
 
         case BEQ:
           if (cpu->reg_st & ZERO_FLAG) {
             branch(cpu, mem);
+          } else {
+            cpu->pc++;
           }
           break;
 
