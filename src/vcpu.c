@@ -456,7 +456,6 @@ int run_x6502(uint8_t* mem, FILE* file_out) {
 
         // No Operation
         case NOP:
-          cpu->pc++;
           break;
 
         // Register Instructions
