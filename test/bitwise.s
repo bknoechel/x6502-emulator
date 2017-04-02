@@ -88,3 +88,85 @@ start:
   JSR       print_status ; 0x81
   LDA       #$0A
   STA       $FF00
+
+  ; Bitwise Exclusive OR
+  LDA       #$FF
+  EOR       #$0F
+  TAX
+  JSR       print_hex_x ; 0xF0
+  LDA       #$00
+  EOR       #$0F
+  TAX
+  JSR       print_hex_x ; 0x0F
+  LDA       #$0A
+  STA       $FF00
+
+  ; Logical Shift Right
+  LDA       #$04
+  LSR
+  TAX
+  JSR       print_hex_x ; 0x02
+  LDA       #$04
+  LSR
+  LSR
+  TAX
+  JSR       print_hex_x ; 0x01
+  LDA       #$04
+  LSR
+  LSR
+  LSR
+  TAX
+  JSR       print_hex_x ; 0x00
+  LDA       #$04
+  LSR
+  LSR
+  LSR
+  LSR
+  TAX
+  JSR       print_hex_x ; 0x00
+  LDA       #$0A
+  STA       $FF00
+
+  ; Bitwise OR
+  LDA       #$FF
+  ORA       #$0F
+  TAX
+  JSR       print_hex_x ; 0xFF
+  LDA       #$00
+  ORA       #$0F
+  TAX
+  JSR       print_hex_x ; 0x0F
+  LDA       #$0A
+  STA       $FF00
+
+  ; Rotate Left
+  LDA       #$01
+  ROL
+  TAX
+  JSR       print_hex_x ; 0x02
+  LDA       #$FF
+  ROL
+  ROL
+  ROL
+  ROL
+  ROL
+  TAX
+  JSR       print_hex_x ; 0xEF
+  LDA       #$0A
+  STA       $FF00
+
+  ; Rotate Right
+  LDA       #$01
+  ROR
+  TAX
+  JSR       print_hex_x ; 0x00
+  LDA       #$FF
+  ROR
+  ROR
+  ROR
+  ROR
+  ROR
+  TAX
+  JSR       print_hex_x ; 0xF7
+  LDA       #$0A
+  STA       $FF00
